@@ -24,7 +24,7 @@ sudo apt install libsdl2-dev
 The application reads no environment variables at runtime.
 
 ## No Config Files
-All constants (`WORLD_SEED`, `WINDOW_WIDTH`, `TILE_SIZE_INIT`, etc.) are compile-time `#define` macros in `src/main.c` and `src/chunk.h`. There is no external config file.
+All constants (`WORLD_SEED`, `TILE_SIZE_INIT`, `PLAYER_SPEED`, etc.) are compile-time `#define` macros in `src/config.h`. Module-level constants (`CHUNK_W`, `CM_POOL_SIZE`) live in their respective headers. There is no external config file.
 
 ## Output / Artifacts
 - `build/mmo-game` — compiled binary (gitignored via `build/` in `.gitignore`)
@@ -33,4 +33,4 @@ All constants (`WORLD_SEED`, `WINDOW_WIDTH`, `TILE_SIZE_INIT`, etc.) are compile
 ## No Secrets
 No API keys, tokens, or credentials are used.
 
-<!-- context-handler: last-updated 2026-03-21 -->
+<!-- context-handler: last-updated 2026-03-22 -->

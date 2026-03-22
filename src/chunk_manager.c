@@ -1,6 +1,8 @@
 #include "chunk_manager.h"
 #include "chunk_renderer.h"
 
+#include <math.h>
+
 /* --- Key helper ----------------------------------------------------------- */
 
 static inline uint64_t make_key(int cx, int cy)
@@ -113,7 +115,7 @@ Chunk *chunk_manager_get(ChunkManager *cm, SDL_Renderer *renderer,
 
 void chunk_manager_render_chunk(ChunkManager *cm, SDL_Renderer *renderer,
                                  int cx, int cy, int off_x, int off_y,
-                                 int tile_size)
+                                 int tile_size, float time)
 {
     Chunk *chunk = chunk_manager_get(cm, renderer, cx, cy);
     if (!chunk) return;
@@ -127,4 +129,17 @@ void chunk_manager_render_chunk(ChunkManager *cm, SDL_Renderer *renderer,
         s->texture = chunk_build_texture(chunk, renderer);
 
     chunk_blit(s->texture, renderer, off_x, off_y, tile_size);
+    chunk_render_water_anim(chunk, renderer, off_x, off_y, tile_size, time);
+}
+
+TileType chunk_manager_tile_at(ChunkManager *cm, int tile_x, int tile_y)
+{
+    int cx = (int)floorf((float)tile_x / CHUNK_W);
+    int cy = (int)floorf((float)tile_y / CHUNK_H);
+    int local_c = tile_x - cx * CHUNK_W;
+    int local_r = tile_y - cy * CHUNK_H;
+
+    Chunk *chunk = chunk_manager_get(cm, NULL, cx, cy);
+    if (!chunk) return TILE_GRASS_0;
+    return chunk->tiles[local_r][local_c];
 }

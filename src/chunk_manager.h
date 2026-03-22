@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "chunk.h"
+#include "tile.h"
 #include "world_gen.h"
 #include "utils/pool.h"
 #include "utils/hashmap.h"
@@ -55,9 +56,12 @@ typedef struct {
     WorldGen      world;
 } ChunkManager;
 
-void   chunk_manager_init(ChunkManager *cm, uint32_t seed);
-Chunk *chunk_manager_get (ChunkManager *cm, SDL_Renderer *renderer,
-                           int cx, int cy);
-void   chunk_manager_render_chunk(ChunkManager *cm, SDL_Renderer *renderer,
-                                   int cx, int cy, int off_x, int off_y,
-                                   int tile_size);
+void      chunk_manager_init(ChunkManager *cm, uint32_t seed);
+Chunk    *chunk_manager_get (ChunkManager *cm, SDL_Renderer *renderer,
+                              int cx, int cy);
+void      chunk_manager_render_chunk(ChunkManager *cm, SDL_Renderer *renderer,
+                                     int cx, int cy, int off_x, int off_y,
+                                     int tile_size, float time);
+/* Returns the tile type at world tile-space coords (tile_x, tile_y).
+ * Generates the chunk on demand (no renderer needed, texture stays NULL). */
+TileType  chunk_manager_tile_at(ChunkManager *cm, int tile_x, int tile_y);

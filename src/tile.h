@@ -66,3 +66,8 @@ typedef enum {
 
     TILE_COUNT
 } TileType;
+
+static inline int tile_is_water(TileType t)
+{
+    return t >= TILE_WATER_0 && t <= TILE_WATER_5;
+}

@@ -1,11 +1,13 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "config.h"
 #include "chunk_manager.h"
 #include "camera.h"
 #include "player.h"
+#include "tile.h"
 
 int main(int argc, char *argv[])
 {
@@ -49,6 +51,12 @@ int main(int argc, char *argv[])
     }
     SDL_RenderSetLogicalSize(renderer, mode.w, mode.h);
 
+    if (player_sprite_init(renderer) != 0) {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
     /* Heap-allocate: ChunkManager is ~tens of MB with a full pool. */
     ChunkManager *cm = malloc(sizeof(ChunkManager));
     if (!cm) {
@@ -68,6 +76,7 @@ int main(int argc, char *argv[])
 
     Uint64 last_ticks = SDL_GetPerformanceCounter();
     Uint64 freq       = SDL_GetPerformanceFrequency();
+    float  game_time  = 0.0f;
     int    running    = 1;
     SDL_Event event;
 
@@ -76,6 +85,7 @@ int main(int argc, char *argv[])
         float  dt  = (float)(now - last_ticks) / (float)freq;
         last_ticks = now;
         if (dt > 0.05f) dt = 0.05f;  /* cap at 20 fps equivalent */
+        game_time += dt;
 
         /* --- Input -------------------------------------------------------- */
         while (SDL_PollEvent(&event)) {
@@ -98,6 +108,18 @@ int main(int argc, char *argv[])
         if (keys[SDL_SCANCODE_A]) dx = -PLAYER_SPEED;
         if (keys[SDL_SCANCODE_D]) dx =  PLAYER_SPEED;
 
+        /* Block movement into water tiles. */
+        if (dx != 0.0f || dy != 0.0f) {
+            float new_wx = player.wx + dx * dt;
+            float new_wy = player.wy + dy * dt;
+            int tile_x = (int)floorf(new_wx / (float)cam.tile_size);
+            int tile_y = (int)floorf(new_wy / (float)cam.tile_size);
+            if (tile_is_water(chunk_manager_tile_at(cm, tile_x, tile_y))) {
+                dx = 0.0f;
+                dy = 0.0f;
+            }
+        }
+
         player_update(&player, dx, dy, dt);
         camera_update(&cam, player.wx, player.wy);
 
@@ -116,7 +138,8 @@ int main(int argc, char *argv[])
                 int off_x = cx * cpw - cam.cam_x;
                 int off_y = cy * cph - cam.cam_y;
                 chunk_manager_render_chunk(cm, renderer, cx, cy,
-                                           off_x, off_y, cam.tile_size);
+                                           off_x, off_y, cam.tile_size,
+                                           game_time);
             }
         }
 
@@ -127,6 +150,7 @@ int main(int argc, char *argv[])
     }
 
     free(cm);
+    player_sprite_free();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

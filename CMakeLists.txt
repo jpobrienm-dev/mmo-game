@@ -20,6 +20,7 @@ add_executable(mmo-game
     src/chunk_manager.c
     src/camera.c
     src/player.c
+    src/sprite_motor.c
 )
 
 target_include_directories(mmo-game PRIVATE ${SDL2_INCLUDE_DIRS})

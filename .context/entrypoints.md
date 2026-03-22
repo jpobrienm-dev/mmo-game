@@ -22,18 +22,24 @@ cmake --build build
 ./build/mmo-game
 ```
 
-No arguments are accepted by `main()` at this time.
+No arguments are accepted by `main()` at this time (`argc`/`argv` are declared but explicitly cast to `(void)`).
+
+## Window Behaviour
+- Window opens at desktop native resolution (queried via `SDL_GetDesktopDisplayMode`), resizable.
+- `SDL_RenderSetLogicalSize` sets logical render size to the desktop dimensions.
+- Nearest-neighbour scaling enforced via `SDL_HINT_RENDER_SCALE_QUALITY "0"`.
+- Vsync enabled via `SDL_HINT_RENDER_VSYNC "1"` and `SDL_RENDERER_PRESENTVSYNC`.
 
 ## Runtime Controls
 
 | Input | Action |
 |-------|--------|
 | W / A / S / D | Move player (200 px/s) |
-| + (equals key) | Zoom in (increase tile_size, max 32) |
-| - (minus key) | Zoom out (decrease tile_size, min 2) |
+| + / = / KP_PLUS | Zoom in (tile_size +1, max 32) |
+| - / KP_MINUS | Zoom out (tile_size -1, min 2) |
 | Window close / Alt-F4 | Quit |
 
 ## No CLI Flags
-`argc`/`argv` are declared but unused; the binary takes no command-line arguments.
+The binary takes no command-line arguments.
 
-<!-- context-handler: last-updated 2026-03-21 -->
+<!-- context-handler: last-updated 2026-03-22 -->
