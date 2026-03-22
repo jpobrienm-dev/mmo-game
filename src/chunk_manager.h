@@ -1,24 +1,63 @@
 #pragma once
 
 #include <stdint.h>
-#include "chunk.h"
-#include "noise.h"
+#include <SDL2/SDL.h>
 
-#define CM_POOL_SIZE  2048 /* max chunks in memory      */
-#define CM_TABLE_SIZE 4096 /* hash table (power of two, >= 2*POOL) */
+#include "chunk.h"
+#include "world_gen.h"
+#include "utils/pool.h"
+#include "utils/hashmap.h"
+
+/* Pool sized for ~4K display at min zoom (tile_size=2): ~120×68 ≈ 8160 chunks.
+ * Hash table must be a power-of-two ≥ 2×POOL for a healthy load factor.      */
+#define CM_POOL_SIZE  8192
+#define CM_TABLE_SIZE 16384
+
+/* --- Pool slot ------------------------------------------------------------ */
+
+/*
+ * One slot in the chunk pool.
+ * lru_prev / lru_next form an intrusive doubly-linked LRU list (pool indices;
+ * -1 = end of list).  The pool's own used[] / next_free[] handle allocation.
+ */
+typedef struct {
+    Chunk        chunk;
+    SDL_Texture *texture;  /* NULL = not yet built */
+    int          lru_prev;
+    int          lru_next;
+} PoolSlot;
+
+POOL_DEFINE(ChunkPool, PoolSlot, CM_POOL_SIZE)
+
+/* --- Hash map ------------------------------------------------------------- */
+
+/* splitmix64 finaliser — excellent avalanche for integer keys */
+static inline uint64_t ChunkMap_hash(uint64_t k) {
+    k ^= k >> 30;
+    k *= 0xbf58476d1ce4e5b9ULL;
+    k ^= k >> 27;
+    k *= 0x94d049bb133111ebULL;
+    k ^= k >> 31;
+    return k;
+}
+static inline int ChunkMap_eq(uint64_t a, uint64_t b) { return a == b; }
+
+HASHMAP_DEFINE(ChunkMap, uint64_t, int)
+
+/* --- Manager -------------------------------------------------------------- */
 
 typedef struct {
-    Chunk    chunks[CM_POOL_SIZE];
-    uint64_t last_access[CM_POOL_SIZE]; /* monotonic clock per slot */
-    int      used[CM_POOL_SIZE];        /* 1 = slot occupied        */
-
-    /* Open-addressing hash table: value = pool index, -1 = empty */
-    int      table[CM_TABLE_SIZE];
-
-    uint64_t clock; /* incremented on every access */
-    Noise    elev;
-    Noise    moist;
+    ChunkPool     pool;
+    ChunkMapEntry table_buf[CM_TABLE_SIZE];
+    ChunkMap      map;
+    int           lru_head;  /* most-recently-used pool index, -1 if empty */
+    int           lru_tail;  /* least-recently-used pool index, -1 if empty */
+    WorldGen      world;
 } ChunkManager;
 
 void   chunk_manager_init(ChunkManager *cm, uint32_t seed);
-Chunk *chunk_manager_get(ChunkManager *cm, int cx, int cy);
+Chunk *chunk_manager_get (ChunkManager *cm, SDL_Renderer *renderer,
+                           int cx, int cy);
+void   chunk_manager_render_chunk(ChunkManager *cm, SDL_Renderer *renderer,
+                                   int cx, int cy, int off_x, int off_y,
+                                   int tile_size);

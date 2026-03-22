@@ -1,6 +1,24 @@
 #include "player.h"
+#include "config.h"
 
 #include <math.h>
+
+void player_init(Player *p, float wx, float wy)
+{
+    p->wx         = wx;
+    p->wy         = wy;
+    p->walk_phase = 0.0f;
+    p->moving     = 0;
+}
+
+void player_update(Player *p, float dx, float dy, float dt)
+{
+    p->moving = (dx != 0.0f || dy != 0.0f);
+    p->wx    += dx * dt;
+    p->wy    += dy * dt;
+    if (p->moving)
+        p->walk_phase += WALK_SPEED * dt;
+}
 
 /*
  * Sprite layout (each block = 1 tile_size):
@@ -32,15 +50,15 @@ static void fill(SDL_Renderer *r, int x, int y, int w, int h)
     SDL_RenderFillRect(r, &rect);
 }
 
-void player_render(SDL_Renderer *renderer, int cx, int cy,
-                   int tile_size, float walk_phase, int moving)
+void player_render(const Player *p, SDL_Renderer *renderer,
+                   int cx, int cy, int tile_size)
 {
     int half = tile_size / 2;
     int qtr  = tile_size / 4;
 
     /* Vertical bob: two peaks per walk cycle (one per footfall). */
-    int bob = moving
-        ? -(int)(fabsf(sinf(walk_phase)) * (float)(tile_size * 2 / 3))
+    int bob = p->moving
+        ? -(int)(fabsf(sinf(p->walk_phase)) * (float)(tile_size * 2 / 3))
         : 0;
 
     /* Bounding-box origin (tile_size wide, 3*tile_size tall). */
@@ -101,7 +119,7 @@ void player_render(SDL_Renderer *renderer, int cx, int cy,
      */
     int arm_pivot_y = by + tile_size + half;
     int arm_rest    = tile_size / 5;
-    int arm_swing   = (int)(sinf(walk_phase) * (float)(tile_size * 3 / 8));
+    int arm_swing   = (int)(sinf(p->walk_phase) * (float)(tile_size * 3 / 8));
     int arm_reach   = half;   /* horizontal reach from body edge */
 
     SDL_SetRenderDrawColor(renderer, COL_SKIN);
@@ -132,7 +150,7 @@ void player_render(SDL_Renderer *renderer, int cx, int cy,
      */
     int leg_pivot_y = by + 3 * tile_size;
     int leg_bot_y   = leg_pivot_y + tile_size;
-    int leg_swing   = (int)(sinf(walk_phase) * (float)half);
+    int leg_swing   = (int)(sinf(p->walk_phase) * (float)half);
     int lq          = tile_size / 5;
 
     SDL_SetRenderDrawColor(renderer, COL_TROUSERS);

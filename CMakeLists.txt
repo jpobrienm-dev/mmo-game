@@ -15,8 +15,10 @@ add_executable(mmo-game
     src/main.c
     src/map.c
     src/noise.c
-    src/chunk.c
+    src/world_gen.c
+    src/chunk_renderer.c
     src/chunk_manager.c
+    src/camera.c
     src/player.c
 )
 
